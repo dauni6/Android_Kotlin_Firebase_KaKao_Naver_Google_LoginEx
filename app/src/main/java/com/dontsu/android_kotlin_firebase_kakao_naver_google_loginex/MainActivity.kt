@@ -20,15 +20,34 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         context = applicationContext
-
-        val result = getApplicationSignature()
-      /*  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d("결과", "${Base64.getEncoder().encode(result.toString().toByteArray())}")
-        }*/
-
-
+        getHashKey()
+        //getApplicationSignature()
     }
 
+    private fun getHashKey() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { //Pie 버전 이상 API level 28
+            val sig = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
+            sig.apkContentsSigners.map {
+                val digest = MessageDigest.getInstance("SHA")
+                digest.update(it.toByteArray())
+                val bytes = digest.digest()
+                val hashKey = String(Base64.encode(bytes, 0))
+                Log.d("결과", hashKey) //해시키 검거
+            }
+        } else {//Pie 버전 미만 API level 28 미만
+            @Suppress("DEPRECATION")
+            val sig = context.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures
+            sig.map {
+                val digest = MessageDigest.getInstance("SHA")
+                digest.update(it.toByteArray())
+                val bytes = digest.digest()
+                val hashKey = String(Base64.encode(bytes, 0))
+                Log.d("결과", hashKey) //해시키 검거
+            }
+        }
+    }
+
+    //스택오버플로우 참고한 해시키값 얻는 방법(bytesToHex() 는 왜 ???)
     private fun getApplicationSignature(packageName: String = context.packageName): List<String> {
         val signatureList: List<String>
         try {
@@ -68,8 +87,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bytesToHex(bytes: ByteArray): String {
-        val something = String(Base64.encode(bytes, 0))
-        Log.d("결과", something)
+        val hashKey = String(Base64.encode(bytes, 0))
+        Log.d("결과", hashKey) //해시키 검거
         val hexArray = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F')
         val hexChars = CharArray(bytes.size * 2)
         var v: Int
