@@ -5,11 +5,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Message
 import android.util.Base64
 import android.util.Log
 import java.security.MessageDigest
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,30 +18,35 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         context = applicationContext
-        getHashKey()
+        val result = getAppHashKey()
         //getApplicationSignature()
     }
 
-    private fun getHashKey() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { //Pie 버전 이상 API level 28
-            val sig = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
-            sig.apkContentsSigners.map {
-                val digest = MessageDigest.getInstance("SHA")
-                digest.update(it.toByteArray())
-                val bytes = digest.digest()
-                val hashKey = String(Base64.encode(bytes, 0))
-                Log.d("결과", hashKey) //해시키 검거
+    private fun getAppHashKey() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { //Pie 버전 이상 API level 28
+                val sig = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
+                 sig.apkContentsSigners.map {
+                    val digest = MessageDigest.getInstance("SHA")
+                    digest.update(it.toByteArray())
+                    val bytes = digest.digest()
+                    val hashKey = String(Base64.encode(bytes, Base64.NO_WRAP))
+                     Log.d("getHashKey", hashKey)
+                }
+            } else {//Pie 버전 미만 API level 28 미만
+                @Suppress("DEPRECATION")
+                val sig = context.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures
+                sig.map {
+                    val digest = MessageDigest.getInstance("SHA")
+                    digest.update(it.toByteArray())
+                    val bytes = digest.digest()
+                    val hashKey = String(Base64.encode(bytes, Base64.NO_WRAP))
+                    Log.d("getHashKey", hashKey)
+                }
             }
-        } else {//Pie 버전 미만 API level 28 미만
-            @Suppress("DEPRECATION")
-            val sig = context.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures
-            sig.map {
-                val digest = MessageDigest.getInstance("SHA")
-                digest.update(it.toByteArray())
-                val bytes = digest.digest()
-                val hashKey = String(Base64.encode(bytes, 0))
-                Log.d("결과", hashKey) //해시키 검거
-            }
+        } catch (e: Exception) {
+            Log.e("hashKey not found", e.message)
+            e.printStackTrace()
         }
     }
 

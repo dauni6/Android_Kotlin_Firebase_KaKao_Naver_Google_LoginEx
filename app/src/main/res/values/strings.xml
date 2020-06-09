@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Android_Kotlin_Firebase_KaKao_Naver_Google_LoginEx</string>
+    <string name="kakao_native_app_key">3add1236e4ccf3e2e1908f8eaaea90db</string>
 </resources>
