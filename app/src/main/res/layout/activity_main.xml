@@ -28,9 +28,7 @@
             android:id="@+id/signInKaKao"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="카카오 로그인"
-            android:foreground="@drawable/kakao_login_medium_narrow"/>
+            android:layout_margin="16dp" />
 
         <Button
             android:id="@+id/signInGoogle"
