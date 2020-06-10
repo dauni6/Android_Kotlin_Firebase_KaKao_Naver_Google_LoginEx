@@ -16,7 +16,7 @@ class KakaoSDKAdapter : KakaoAdapter() {
             }
 
             override fun isSecureMode(): Boolean {
-                return true
+                return false
             }
 
             override fun getApprovalType(): ApprovalType? {

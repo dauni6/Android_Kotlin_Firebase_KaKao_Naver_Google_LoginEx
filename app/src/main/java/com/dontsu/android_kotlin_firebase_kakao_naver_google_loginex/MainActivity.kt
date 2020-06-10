@@ -10,12 +10,14 @@ import android.os.Bundle
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import com.kakao.auth.ApiErrorCode
 import com.kakao.auth.AuthType
 import com.kakao.auth.ISessionCallback
 import com.kakao.auth.Session
 import com.kakao.network.ErrorResult
 import com.kakao.usermgmt.UserManagement
+import com.kakao.usermgmt.callback.LogoutResponseCallback
 import com.kakao.usermgmt.callback.MeV2ResponseCallback
 import com.kakao.usermgmt.response.MeV2Response
 import com.kakao.util.exception.KakaoException
@@ -35,43 +37,16 @@ class MainActivity : AppCompatActivity() {
         context = applicationContext
         sessionCallback = SessionCallback()
         Session.getCurrentSession().addCallback(sessionCallback)  // 세션 콜백 등록
-
-        getAppHashKey()
+        Log.d("hashKey", getAppHashKey())
 
         signInKaKao.setOnClickListener {
-
             //Session.getCurrentSession().open(AuthType.KAKAO_TALK_ONLY, this) //얘로해도 되고
             Session.getCurrentSession().checkAndImplicitOpen() //얘로 해도 된다. 얘는 앱에 유효한 카카오 로그인 토큰이 있다면 바로 로그인을 시켜주는 함수, 이전에 로그인한 기록이 있다면, 다음 번에 앱을 켰을 때 자동으로 로그인을 시켜주는 것
         }
+
     }
 
-    private fun getAppHashKey() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { //Pie 버전 이상 API level 28
-                val sig = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
-                 sig.apkContentsSigners.map {
-                    val digest = MessageDigest.getInstance("SHA")
-                    digest.update(it.toByteArray())
-                    val bytes = digest.digest()
-                    val hashKey = String(Base64.encode(bytes, Base64.NO_WRAP))
-                     Log.d("getHashKey", hashKey)
-                }
-            } else {//Pie 버전 미만 API level 28 미만
-                @Suppress("DEPRECATION")
-                val sig = context.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures
-                sig.map {
-                    val digest = MessageDigest.getInstance("SHA")
-                    digest.update(it.toByteArray())
-                    val bytes = digest.digest()
-                    val hashKey = String(Base64.encode(bytes, Base64.NO_WRAP))
-                    Log.d("getHashKey", hashKey)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("hashKey not found", e.message)
-            e.printStackTrace()
-        }
-    }
+
 
     // 세션 콜백 구현
     private inner class SessionCallback : ISessionCallback {
@@ -79,9 +54,10 @@ class MainActivity : AppCompatActivity() {
         override fun onSessionOpened() {
             UserManagement.getInstance().me(object: MeV2ResponseCallback() {
                 override fun onSuccess(result: MeV2Response?) {
-                    val intent = Intent(context, SignupActivity::class.java)
-                    intent.putExtra("name", result?.nickname)
-                    intent.putExtra("profile", result?.profileImagePath)
+                    val intent = Intent(context, MyInfoActivity::class.java)
+                    intent.putExtra("name",  result?.kakaoAccount?.profile?.nickname)
+                    intent.putExtra("profile", result?.kakaoAccount?.profile?.profileImageUrl)
+                    intent.putExtra("email", result?.kakaoAccount?.email)
                     startActivity(intent)
                 }
 
@@ -181,4 +157,34 @@ class MainActivity : AppCompatActivity() {
         }
         return String(hexChars)
     }*/
+
+    private fun getAppHashKey(): String {
+        var result = ""
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { //Pie 버전 이상 API level 28
+                val sig = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
+                sig.apkContentsSigners.map {
+                    val digest = MessageDigest.getInstance("SHA")
+                    digest.update(it.toByteArray())
+                    val bytes = digest.digest()
+                    val hashKey = String(Base64.encode(bytes, Base64.NO_WRAP))
+                    result = hashKey
+                }
+            } else {//Pie 버전 미만 API level 28 미만
+                @Suppress("DEPRECATION")
+                val sig = context.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures
+                sig.map {
+                    val digest = MessageDigest.getInstance("SHA")
+                    digest.update(it.toByteArray())
+                    val bytes = digest.digest()
+                    val hashKey = String(Base64.encode(bytes, Base64.NO_WRAP))
+                    result = hashKey
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("hashKey not found", e.message)
+            e.printStackTrace()
+        }
+        return result
+    }
 }
